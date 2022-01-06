@@ -1,0 +1,51 @@
+---
+- hosts: localhost
+  gather_facts: no
+  vars:
+    esxi_server: "10.1.1.100"
+    esxi_user: "root"
+    esxi_pass: "Nfv@1234"
+    datacenter_name: "Datacenter"
+    cluster_name: "Cluster"
+  tasks:
+  - name: Add a VMware vSwitch
+  community.vmware.vmware_vswitch:
+    hostname: "{{ esxi_server }}"
+    username: "{{ esxi_user }}"
+    password: "{{ esxi_pass }}"
+    switch: vSwitch0
+    nics: vmnic0
+    mtu: 1500
+    validate_certs: no
+  delegate_to: localhost
+
+  - name: Add Management Network VM Portgroup
+  community.vmware.vmware_portgroup:
+    hostname: "{{ esxi_server }}"
+    username: "{{ esxi_user }}"
+    password: "{{ esxi_pass }}"
+    hosts: esxi10
+    switch: "vSwitch0"
+    portgroup: "VM Network"
+    vlan_id: 20
+    validate_certs: no
+  delegate_to: localhost
+
+  - name: Deploy BMO OVA
+    community.vmware.vmware_vswitch:
+      hostname: "{{ esxi_server }}"
+      username: "{{ esxi_user }}"
+      password: "{{ esxi_pass }}"
+      validate_certs: False
+      name: BMO
+      datacenter: "{{ datacenter_name }}"
+      cluster: "{{ cluster_name }}"
+      datastore: "datastore1"
+      disk_provisioning: thin
+      ovf: /vijaysubuntu/destop/template.ova
+      validate_certs: no
+      networks:
+        "VM Network": "VM Network"
+      power_on: no
+      wait_for_ip_address: yes
+    delegate_to: localhost
